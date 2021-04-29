@@ -17,7 +17,7 @@ export class Checkout {
         })
     }
 
-    public get scanned(): any[] {
+    public get scanned(): any[]{
         return this.scannedProducts;
     }
 
@@ -25,7 +25,7 @@ export class Checkout {
         const payload = {
             id: productID,
             amount: 1,
-            price: 0,
+            price: 0
         };
         if (this.scannedProducts.some(p => p.id === productID)) {
             this.scannedProducts.forEach(p => {
