@@ -1,4 +1,4 @@
-import {pricingRules, Product} from '../interfaces/Products'
+import {pricingRules, Product, Rule} from '../interfaces/Products'
 import {RuleProcessor} from './RuleProcessor'
 
 export class Checkout {
@@ -6,30 +6,26 @@ export class Checkout {
     scannedProducts : {
         id: string,
         amount: number
+        price: number
     }[] = [];
-    rules = [];
+    rules = [] as Rule[];
 
     constructor(pricingRules : pricingRules) {
         pricingRules.products.forEach(p => this.products.push(p));
         pricingRules.rules.forEach(rule => {
             this.rules.push(rule);
         })
-    };
-
-    private matchID(productID : string) {
-        this.products.forEach(p => {
-            if (p.id === productID) {
-                return true;
-            } else {
-                return false;
-            }
-        })
     }
 
-    scan(productID : string) {
-        var payload = {
+    public get scanned(): any[] {
+        return this.scannedProducts;
+    }
+
+    scan(productID : string): void {
+        const payload = {
             id: productID,
-            amount: 1
+            amount: 1,
+            price: 0,
         };
         if (this.scannedProducts.some(p => p.id === productID)) {
             this.scannedProducts.forEach(p => {
@@ -40,20 +36,21 @@ export class Checkout {
         } else {
             this.scannedProducts.push(payload);
         }
-    };
+    }
 
-    total() {
-        var total = 0;
+    total(): number {
+        let total = 0;
         this.scannedProducts.forEach(scanned => {
-            var product = this.products.find(p => p.id === scanned.id)
-            var rule = this.rules.find(r => r.id === scanned.id)
+            const product = this.products.find(p => p.id === scanned.id)
+            const rule = this.rules.find(r => r.id === scanned.id)
             if (product) {
                 if (rule) {
-                    var processor = new RuleProcessor(rule)
+                    const processor = new RuleProcessor(rule)
                     // create RuleProcessor object
                     // i used objects with a JSON data structure to allow for easy remote storage of rules
                     // and and easy way to add new rules, if you want to add a new kind of comparison you could do this also
-                    var itemCost = processor.apply(product, scanned.amount); // apply rule logic
+                    const itemCost = processor.apply(product, scanned.amount); // apply rule logic
+                    scanned.price = itemCost;
                     total += itemCost;
                 } else {
                     total += product.price * scanned.amount;
@@ -66,5 +63,5 @@ export class Checkout {
 
         });
         return total;
-    };
+    }
 }
