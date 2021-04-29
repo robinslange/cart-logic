@@ -15,10 +15,14 @@ export class RuleProcessor {
         this.strict = rule.strict;
         this.discount = rule.discount;
         this.applyTo = rule.applyTo;
-    };
+        this.totalCost = 0;
+    }
 
-    apply(product : Product, amount : number) {
-        var cost = 0;
+    apply(product : Product, amount : number): any {
+        let payload = {
+            cost: 0,
+            discount: 0,
+        }
         // this processing logic could be further refined and refactored into
         // easy to test class methods, however for the sake of simplicity in initial development
         // i chose to do it this way
@@ -27,40 +31,42 @@ export class RuleProcessor {
         // build/deploy
         if (this.strict) {
             if (amount === this.amountNeeded) {
-                cost = this.applyToMath(product, amount);
+               payload = this.applyToMath(product, amount);
             } else if (amount > this.amountNeeded) {
-                var remainder = amount % 2;
-                var tempAmount = amount - remainder;
+                const remainder = amount % 2;
+                const tempAmount = amount - remainder;
                 if (remainder > 0) {
-                    cost += this.applyToMath(product, tempAmount);
-                    var remainderCost = remainder * product.price;
-                    cost += remainderCost;
+                    payload = this.applyToMath(product, tempAmount);
+                    const remainderCost = remainder * product.price;
+                    payload.cost += remainderCost;
                 } else {
-                    cost = this.applyToMath(product, tempAmount);
+                    payload = this.applyToMath(product, tempAmount);
                 }
             } else {
-                cost = product.price * amount;
+                payload.cost = product.price * amount;
             }
         } else {
             if (amount >= this.amountNeeded) {
-                cost = this.applyToMath(product, amount);
+                payload = this.applyToMath(product, amount);
             } else {
-                cost = product.price * amount;
+                payload.cost = product.price * amount;
             }
         }
-        return cost;
-    };
+        return payload;
+    }
 
     private applyToMath(product : Product, amount : number) {
-        var cost = 0
+        let cost = 0
+        let discount = 0
         if (this.applyTo === 'single') {
-            let discountAmount = product.price * this.discount;
-            let discountedPrice = product.price - discountAmount;
+            const discountAmount = product.price * this.discount;
+            const discountedPrice = product.price - discountAmount;
+            discount = discountAmount * amount;
             cost = discountedPrice * amount;
         }
         if (this.applyTo === 'total') {
-            cost = (product['price'] * amount) * this.discount;
+            discount = cost = (product.price * amount) * this.discount;
         }
-        return cost;
-    };
+        return {cost: cost, discount: discount};
+    }
 }
